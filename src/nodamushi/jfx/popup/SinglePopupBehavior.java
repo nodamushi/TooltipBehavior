@@ -33,7 +33,6 @@ import javafx.util.Duration;
  * 挙動を定義する。<br/>
  * 基本的な動作は javafx.scene.control.Tooltip.TooltipBehavior
  * と同様になるようにしてある。<br/><br/>
- *
  * 複数のSinglePopupBehaviorの間でも最大で一つのポップアップしか表示させたくない
  * 場合は、BehaviorGroupを作成し、登録する。
  *
@@ -104,23 +103,33 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
   //-----------------------------------------------
   /**
    * Popupが表示可能かどうかの判断を行うBiPredicateを設定する
-   * @param p
+   * @param p null可
    */
   public void setDisplayableChecker(final BiPredicate<? super P, ? super Node> p){
     this.visibityc = p;
   }
-
+  /**
+   * {@link SinglePopupBehavior#setDisplayableChecker(BiPredicate)}で設定された内容を返す
+   * @return
+   */
   public BiPredicate<? super P, ? super Node> getDisplayableChecker(){
     return visibityc;
   }
-
+  /**
+   * {@link SinglePopupBehavior#getDisplayableChecker(BiPredicate)}がnullでない場合は、
+   * {@link BiPredicate#test(Object, Object)}の結果を返し、nullである場合はtrueを返す
+   * @param p 表示するポップアップ
+   * @param hover
+   * @return
+   */
   protected boolean checkDisplayable(final P p,final Node hover){
     final BiPredicate<? super P, ? super Node> b = getDisplayableChecker();
     return b == null ? true: b.test(p, hover);
   }
+
   /**
    * pを表示することが可能かどうか判断する
-   * @param p
+   * @param p 表示するポップアップ
    * @param hover
    * @return
    */
@@ -129,7 +138,15 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
     return w != null && isWindowHierarchyVisible(hover)
         && (isPopupOnNonFocusWindow(p,hover)|| hasFocus(w)) && checkDisplayable(p, hover);
   }
-
+  /**
+   * hoverにマウスがあるときに、pを表することが可能かどうかを判断する。<br/>
+   *
+   * {@link SinglePopupBehavior#isDisplayable(PopupWindow, Node)}から利用される。
+   * @param p 表示するポップアップ
+   * @param hover
+   * @return
+   * @see SinglePopupBehavior#isPopupOnNonFocusWindow()
+   */
   protected boolean isPopupOnNonFocusWindow(final P p,final Node hover){
     return isPopupOnNonFocusWindow();
   }
@@ -142,13 +159,19 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
     this.update = updater;
   }
 
+  /**
+   * {@link SinglePopupBehavior#setPopupUpdater(BiConsumer)}で設定された内容を返す
+   * @return
+   * @see SinglePopupBehavior#setPopupUpdater(BiConsumer)
+   */
   public BiConsumer<? super P, ? super Node> getPopupUpdater(){
     return update;
   }
   /**
    * popupUpdaterが登録されていれば、更新を行う
-   * @param p
-   * @param node
+   * @param p 表示するポップアップ
+   * @param node マウスがホバーされているノード
+   * @see SinglePopupBehavior#setPopupUpdater(BiConsumer)
    */
   protected void updatePopup(final P p,final Node node){
     final BiConsumer<? super P, ? super Node> u = getPopupUpdater();
@@ -160,14 +183,38 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
   //-----------------------------------------------
   //         MouseEvent
   //-----------------------------------------------
-
+  /**
+   * このBehaviorの利用するEventHandlerで観測された最後のマウススクリーン座標のx
+   * @return  観測された最後のマウススクリーン座標のx
+   * @see SinglePopupBehavior#getLastMouseY()
+   */
   public final double getLastMouseX(){return x;}
+  /**
+   * このBehaviorの利用するEventHandlerで観測された最後のマウススクリーン座標のy
+   * @return  観測された最後のマウススクリーン座標のy
+   * @see SinglePopupBehavior#getLastMouseX()
+   */
   public final double getLastMouseY(){return y;}
-  protected final void setMousePosition(final MouseEvent e){
-    x = e.getScreenX();
-    y = e.getScreenY();
-  }
 
+  /**
+   * マウスのスクリーン座標を保持する
+   * @param x スクリーン座標x
+   * @param y スクリーン座標y
+   */
+  protected final void setMousePosition(final double x,final double y){
+    this.x = x;this.y = y;
+  }
+  /**
+   * マウスのスクリーン座標を保持する
+   * @param e MouseEvent
+   */
+  protected final void setMousePosition(final MouseEvent e){
+    setMousePosition(e.getScreenX(), e.getScreenY());
+  }
+  /**
+   * {@link MouseEvent#MOUSE_MOVED}のイベント発生時に呼び出されます。
+   * @param e
+   */
   protected void mouseMove(final MouseEvent e){
     setMousePosition(e);
     final Object source = e.getSource();
@@ -205,7 +252,10 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
     }
 
   }
-
+  /**
+   * {@link MouseEvent#MOUSE_EXITED}のイベント発生時に呼び出されます。
+   * @param e
+   */
   protected void mouseExited(final MouseEvent e){
     setMousePosition(e);
     final P v = getVisiblePopup();
@@ -225,10 +275,21 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
     }
   }
 
+  /**
+   * {@link MouseEvent#MOUSE_EXITED}が発生したとき、Left Timerを起動するのではなく、
+   * 即座に非表示にするかどうかを判断する。
+   * @param p 非表示にするポップアップ
+   * @param node MOUSE_EXITEDの発生元
+   * @return trueの時、即座に非表示にする
+   * @see SinglePopupBehavior#isHideOnExit()
+   */
   protected boolean isHideOnExit(final P p,final Node node){
     return isHideOnExit();
   }
-
+  /**
+   * {@link MouseEvent#MOUSE_PRESSED}のイベント発生時に呼び出されます。
+   * @param e
+   */
   protected void mousePressed(final MouseEvent e){
     setMousePosition(e);
     kill();
@@ -239,6 +300,10 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
   //-----------------------------------------------
   //         Timer
   //-----------------------------------------------
+  /**
+   * ポップアップを表示するタイマーのアクション
+   * @param e
+   */
   protected void openAction(final ActionEvent e){
     final P p = getActivatePopup();
     final Node n = getHoverNode();
@@ -256,25 +321,19 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
       runHideTimer(p, n);
     }
   }
-
+  /**
+   * 表示してからの時間経過でポップアップを非表示にするタイマーのアクション
+   * @param e
+   */
   protected void hideAction(final ActionEvent e){
-    final P p = getVisiblePopup();
-    if(p!=null){
-      p.hide();
-    }
-    setVisible(null, null);
-    stopOpenTimer();
-    stopLeftTimer();
+    kill();
   }
-
+  /**
+   * Nodeからマウスが離れてからの時間経過でポップアップを表示するタイマーのアクション
+   * @param e
+   */
   protected void leftAction(final ActionEvent e){
-    final P p = getVisiblePopup();
-    if(p!=null){
-      p.hide();
-    }
-    setVisible(null, null);
-    stopOpenTimer();
-    stopHideTimer();
+    kill();
   }
 
   private static boolean isStopped(final Timeline t){
@@ -283,11 +342,35 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
   private static boolean isRunning(final Timeline t){
     return t.getStatus() == Status.RUNNING;
   }
+  /**
+   * ポップアップを表示するタイマーが動いているかどうか
+   * @return
+   */
   protected final boolean isOpenRunning(){return isRunning(open);}
+  /**
+   * 表示してからの時間経過でポップアップを非表示にするタイマーが動いているかどうか
+   * @return
+   */
   protected final boolean isHideRunning(){return isRunning(hide);}
+  /**
+   * Nodeからマウスが離れてからの時間経過でポップアップを表示するタイマーが動いているかどうか
+   * @return
+   */
   protected final boolean isLeftRunning(){return isRunning(left);}
+  /**
+   * ポップアップを表示するタイマーが止まっているかどうか
+   * @return
+   */
   protected final boolean isOpenStopped(){return isStopped(open);}
+  /**
+   * 表示してからの時間経過でポップアップを非表示にするタイマーが止まっているかどうか
+   * @return
+   */
   protected final boolean isHideStopped(){return isStopped(hide);}
+  /**
+   * Nodeからマウスが離れてからの時間経過でポップアップを表示するタイマーが動いているかどうか
+   * @return
+   */
   protected final boolean isLeftStopped(){return isStopped(left);}
 
   private static void runTimer(final Duration d,final Timeline t){
@@ -307,44 +390,65 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
     t.playFromStart();
   }
   /**
+   * ポップアップを表示するタイマーを起動する<br/>
    * 対象に見合ったDurationを計算し、{@link SinglePopupBehavior#runOpenTimer(Duration)}
    * を呼び出す
-   * @param p
+   * @param p 表示にするポップアップ
+   * @param hover pが表示になった原因のNode
    */
   protected abstract void runOpenTimer(P p,Node hover);
-  /**渡されたDurationの間待機し、Popupを表示するタイマーを起動する*/
+  /**
+   * ポップアップを表示するタイマーを起動する<br/>
+   * 渡されたDurationの間待機し、Popupを表示するタイマーを起動する
+   * @param d アクションまでの時間
+   */
   protected final void runOpenTimer(final Duration d){
     runTimer(d,open);
   }
+  /**
+   * ポップアップを表示するタイマーを停止する
+   */
   protected final void stopOpenTimer(){open.stop();}
   /**
    * 対象に見合ったDurationを計算し、{@link SinglePopupBehavior#runHideTimer(Duration)}
    * を呼び出す
-   * @param p
+   * @param p 非表示にする対象のポップアップ
+   * @param hover pが表示になった原因のNode
    */
   protected abstract void runHideTimer(P p,Node hover);
   /**
+   * 表示してからの時間経過でポップアップを非表示にするタイマーを起動する<br/>
    * 渡されたDurationの間待機し、Popupを非表示にするタイマーを起動する。<br/>
    * runOpenTimerがイベントを発行した後に使われる<br/>
+   * @param d アクションまでの時間
    */
   protected final void runHideTimer(final Duration d){
     runTimer(d,hide);
   }
+  /**
+   * 表示してからの時間経過でポップアップを非表示にするタイマーを停止する<br/>
+   */
   protected final void stopHideTimer(){hide.stop();}
 
   /**
+   * Nodeからマウスが放れてからの時間経過でポップアップを非表示にするタイマーを起動する<br/>
    * 対象に見合ったDurationを計算し、{@link SinglePopupBehavior#runLeftTimer(Duration)}
    * を呼び出す
-   * @param p
+   * @param p 非表示にする対象のポップアップ
+   * @param hover pが表示になった原因のNode
    */
   protected abstract void runLeftTimer(P p,Node hover);
   /**
-   * 渡されたDurationの間待機し、Popupを非表示にするタイマーを起動する<br/>
-   * マウスがNodeから離れた後に使う
+   * Nodeからマウスが放れてからの時間経過でポップアップを非表示にするタイマーを起動する<br/>
+   * 渡されたDurationの間待機し、Popupを非表示にするタイマーを起動する
+   * @param d アクションまでの時間
    */
   protected final void runLeftTimer(final Duration d){
     runTimer(d,left);
   }
+  /**
+   * Nodeからマウスが放れてからの時間経過でポップアップを非表示にするタイマーを停止する
+   */
   protected final void stopLeftTimer(){left.stop();}
 
 
@@ -369,6 +473,13 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
   //         Node
   //-----------------------------------------------
 
+  /**
+   * ポップアップを表示する
+   * @param p 表示にするポップアップ
+   * @param hover pが表示になる原因のNode
+   * @param anchorX pのAnchor座標x
+   * @param anchorY pのAnchor座標y
+   */
   protected abstract void show(P p,Node hover,double anchorX,double anchorY);
 
   /**
@@ -427,6 +538,9 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
   //-----------------------------------------------
   //         Group
   //-----------------------------------------------
+  /**
+   * 同じグループのBehaviorで現在動いている動作を停止させます
+   */
   protected final void killOtherBehaviors(){
     if(groups==null) {
       return;
@@ -435,7 +549,10 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
       g.killOthers(this);
     }
   }
-
+  /**
+   * 同じグループのBehaviorで現在ポップアップを表示中の要素があるかどうか
+   * @return
+   */
   protected final boolean isOtherBehaviorsShowing(){
     if(groups==null) {
       return false;
@@ -464,6 +581,10 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
       groups = null;
     }
   }
+  /**
+   * 参加しているグループを返す
+   * @return 不変リスト
+   */
   public List<BehaviorGroup> getGroups(){
     if(groups == null) {
       return Collections.emptyList();
@@ -485,7 +606,18 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
     public BehaviorGroup(final SinglePopupBehavior<?>... behaviors){
       addAll(behaviors);
     }
-
+    /**
+     * ブルー婦に属するBehaviorの処理を停止させます
+     */
+    public void kill(){
+      if(behaviors==null) {return;}
+      for(final WeakReference<SinglePopupBehavior<?>> r:behaviors){
+        final SinglePopupBehavior<?> b = r.get();
+        if(b!=null) {
+          b.kill();
+        }
+      }
+    }
     private void killOthers(final SinglePopupBehavior<?> source){
       if(behaviors==null) {return;}
       for(final WeakReference<SinglePopupBehavior<?>> r:behaviors){
@@ -506,7 +638,11 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
       return false;
     }
 
-
+    /**
+     * このグループがbehaviorを含むかどうか
+     * @param behaivor
+     * @return
+     */
     public boolean contains(final SinglePopupBehavior<?> behaivor){
       if(behaivor==null || behaviors==null) {
         return false;
@@ -531,7 +667,10 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
       }
       return false;
     }
-
+    /**
+     * グループにbehaviorを追加する
+     * @param behavior
+     */
     public void add(final SinglePopupBehavior<?> behavior){
       if(behavior ==null || contains(behavior)) {
         return;
@@ -545,7 +684,10 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
       behaviors.add(w);
       behavior.addGroup(this);
     }
-
+    /**
+     * グループからbehaviorを削除する
+     * @param behavior
+     */
     public void remove(final SinglePopupBehavior<?> behavior){
       if(behavior ==null || behaviors==null) {return;}
       final Iterator<WeakReference<SinglePopupBehavior<?>>> i = behaviors.iterator();
@@ -570,6 +712,10 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
       }
     }
 
+    /**
+     * グループから全てのbehaviorを削除する
+     * @param behaviors
+     */
     public void removeAll(final Collection<SinglePopupBehavior<?>> behaviors){
       if(this.behaviors ==null || behaviors==null) {return;}
       for(final SinglePopupBehavior<?> r:behaviors){
@@ -593,20 +739,30 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
       }
     }
 
+    /**
+     * グループから全てのbehaviorを削除する
+     * @param behaviors
+     */
     public void removeAll(final SinglePopupBehavior<?>... behaviors){
       if(behaviors==null) {
         return;
       }
       removeAll(Arrays.asList(behaviors));
     }
-
+    /**
+     * グループに全てのbehaviorを追加する
+     * @param behaviors
+     */
     public void addAll(final SinglePopupBehavior<?>... behaviors){
       if(behaviors == null) {
         return;
       }
       addAll(Arrays.asList(behaviors));
     }
-
+    /**
+     * グループに全てのbehaviorを追加する
+     * @param behaviors
+     */
     public void addAll(final Collection<SinglePopupBehavior<?>> behaviors){
       if(behaviors == null) {
         return;
@@ -626,27 +782,54 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
         }
       }
     }
+    public void clear(){
+      for (final Iterator<WeakReference<SinglePopupBehavior<?>>> i = this.behaviors.iterator();
+          i.hasNext();) {
+        final WeakReference<SinglePopupBehavior<?>> w = i.next();
+        final SinglePopupBehavior<?> b = w.get();
+        if(b != null) {
+          b.removeGroup(this);
+          break;
+        }
+      }
+      behaviors.clear();
+    }
 
   }
 
   private static final BehaviorGroup GROUP = new BehaviorGroup();
-
+  /**
+   * SinglePopupBehaviorが管理するBehaviorGroupにBehaviorを追加する
+   * @param behavior
+   */
   public static void manageVisible(final SinglePopupBehavior<?> behavior){
     GROUP.add(behavior);
   }
-
+  /**
+   * SinglePopupBehaviorが管理するBehaviorGroupにBehaviorを追加する
+   * @param behaviors
+   */
   public static void manageVisible(final SinglePopupBehavior<?>... behaviors){
     GROUP.addAll(behaviors);
   }
-
+  /**
+   * SinglePopupBehaviorが管理するBehaviorGroupからBehaviorを削除する
+   * @param behavior
+   */
   public static void unmanageVisible(final SinglePopupBehavior<?> behavior){
     GROUP.remove(behavior);
   }
-
+  /**
+   * SinglePopupBehaviorが管理するBehaviorGroupからBehaviorを削除する
+   * @param behaviors
+   */
   public static void unmanageVisible(final SinglePopupBehavior<?>... behaviors){
     GROUP.removeAll(behaviors);
   }
-
+  /**
+   * SinglePopupBehaviorが管理するBehaviorGroupを返します
+   * @return
+   */
   public static BehaviorGroup getStaticGroup(){
     return GROUP;
   }
@@ -749,7 +932,7 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
   private BooleanProperty popupOnNonFocusWindowProperty;
 
   /**
-   *
+   * {@link MouseEvent#MOUSE_EXITED}が発生したときにすぐにポップアップを消すかどうか
    * @return
    */
   public final BooleanProperty hideOnExitProperty(){

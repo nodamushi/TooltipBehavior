@@ -69,11 +69,19 @@ public class TooltipBehavior extends TooltipBehaviorBase<Tooltip>{
   //-------------------------------------------
   //    一つのTooltipを使い回す
   //-------------------------------------------
-
+  /**
+   * {@link TooltipBehavior#install(Node)}で利用するツールチップを設定する
+   * @param t
+   * @see TooltipBehavior#install(Node)
+   */
   public void setDefautlTooltip(final Tooltip t){
     defaultTooltip = t;
   }
-
+  /**
+   * {@link TooltipBehavior#install(Node)}で利用するツールチップ返す。<br/>
+   * 何も指定されていないときは、新たなTooltipインスタンスを生成、保持してから変えす。
+   * @return
+   */
   public Tooltip getDefaultTooltip(){
     if(defaultTooltip == null){
       defaultTooltip = new Tooltip();

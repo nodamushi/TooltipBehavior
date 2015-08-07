@@ -11,6 +11,12 @@ import javafx.stage.PopupWindow;
 import javafx.stage.Window;
 import javafx.util.Duration;
 
+/**
+ * 変更可能なDurationのプロパティとオフセットのプロパティを持つTooltipBehaviorの基本実装
+ * @author nodamushi
+ *
+ * @param <P>
+ */
 public abstract class TooltipBehaviorBase<P extends PopupWindow>
 extends SinglePopupBehavior<P>{
 
@@ -45,7 +51,7 @@ extends SinglePopupBehavior<P>{
 
 
   /**
-   *
+   * ポップアップさせるまでの時間
    * @return
    */
   public final ObjectProperty<Duration> openDurationProperty(){
@@ -68,7 +74,7 @@ extends SinglePopupBehavior<P>{
 
 
   /**
-   *
+   * ポップアップ後、ウィンドウが表示になっている時間
    * @return
    */
   public final ObjectProperty<Duration> hideDurationProperty(){
@@ -90,7 +96,8 @@ extends SinglePopupBehavior<P>{
 
 
   /**
-   *
+   * ポップアップが表示テイルときに、ポップアップが表示の原因となったNodeからマウスが放れた後に、
+   * ウィンドウが表示になっている時間
    * @return
    */
   public final ObjectProperty<Duration> leftDurationProperty(){
@@ -113,7 +120,7 @@ extends SinglePopupBehavior<P>{
 
 
   /**
-   *
+   * 表示時のオフセット
    * @return
    */
   public final DoubleProperty xOffsetProperty(){
@@ -135,7 +142,7 @@ extends SinglePopupBehavior<P>{
 
 
   /**
-   *
+   * 表示時のオフセット
    * @return
    */
   public final DoubleProperty yOffsetProperty(){
