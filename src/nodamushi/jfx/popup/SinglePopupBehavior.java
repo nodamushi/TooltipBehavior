@@ -217,6 +217,11 @@ public abstract class SinglePopupBehavior<P extends PopupWindow>{
         stopHideTimer();
         runLeftTimer(v, getVisibleNode());
       }
+    }else{
+      stopOpenTimer();
+      stopLeftTimer();
+      stopHideTimer();
+      setActivate(null, null);
     }
   }
 
